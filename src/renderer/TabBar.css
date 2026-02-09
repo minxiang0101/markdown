@@ -1,0 +1,116 @@
+/* TabBar 组件样式 */
+
+.tab-bar {
+  display: flex;
+  align-items: center;
+  background-color: #e8e8e8;
+  border-bottom: 1px solid #ccc;
+  padding: 0 0.5rem;
+  min-height: 36px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  flex-shrink: 0;
+}
+
+/* 滚动条样式 */
+.tab-bar::-webkit-scrollbar {
+  height: 4px;
+}
+
+.tab-bar::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.tab-bar::-webkit-scrollbar-thumb {
+  background: #ccc;
+  border-radius: 2px;
+}
+
+.tab-bar::-webkit-scrollbar-thumb:hover {
+  background: #aaa;
+}
+
+/* 标签样式 */
+.tab {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  background-color: #d8d8d8;
+  border: 1px solid #ccc;
+  border-bottom: none;
+  border-radius: 4px 4px 0 0;
+  margin-right: 2px;
+  cursor: pointer;
+  user-select: none;
+  transition: background-color 0.15s ease;
+  max-width: 200px;
+  min-width: 80px;
+  flex-shrink: 0;
+}
+
+.tab:hover {
+  background-color: #e0e0e0;
+}
+
+/* 激活状态 */
+.tab.active {
+  background-color: #ffffff;
+  border-bottom: 1px solid #ffffff;
+  margin-bottom: -1px;
+}
+
+/* 拖拽中状态 */
+.tab.dragging {
+  opacity: 0.5;
+}
+
+/* 拖拽悬停目标 */
+.tab.drag-over {
+  border-left: 3px solid #007bff;
+  padding-left: calc(0.75rem - 3px);
+}
+
+/* 标签名称 */
+.tab-name {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 0.8125rem;
+  color: #333;
+}
+
+/* 关闭按钮 */
+.tab-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 3px;
+  background: transparent;
+  color: #666;
+  font-size: 1rem;
+  line-height: 1;
+  cursor: pointer;
+  flex-shrink: 0;
+  transition: background-color 0.15s ease, color 0.15s ease;
+  padding: 0;
+}
+
+.tab-close:hover {
+  background-color: #c0c0c0;
+  color: #333;
+}
+
+.tab.active .tab-close:hover {
+  background-color: #e0e0e0;
+}
+
+/* 关闭按钮获取焦点时 */
+.tab-close:focus {
+  outline: none;
+  background-color: #c0c0c0;
+}

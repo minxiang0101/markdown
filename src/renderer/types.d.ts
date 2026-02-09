@@ -2,6 +2,22 @@
 // This file declares the global window.electronAPI interface
 
 /**
+ * 文件变化事件数据
+ */
+interface FileChangedData {
+  filePath: string;
+  content: string;
+}
+
+/**
+ * 文件错误事件数据
+ */
+interface FileErrorData {
+  filePath: string | null;
+  message: string;
+}
+
+/**
  * Electron API 接口
  */
 interface ElectronAPI {
@@ -19,16 +35,23 @@ interface ElectronAPI {
   readFile: (filePath: string) => Promise<string>;
 
   /**
-   * 监听文件变化事件
-   * @param callback 文件变化时的回调函数
+   * 关闭文件（停止监视）
+   * @param filePath 文件路径
+   * @returns 是否成功
    */
-  onFileChanged: (callback: (content: string) => void) => void;
+  closeFile: (filePath: string) => Promise<boolean>;
+
+  /**
+   * 监听文件变化事件
+   * @param callback 文件变化时的回调函数，接收文件路径和内容
+   */
+  onFileChanged: (callback: (data: FileChangedData) => void) => void;
 
   /**
    * 监听文件错误事件
-   * @param callback 发生错误时的回调函数
+   * @param callback 发生错误时的回调函数，接收文件路径和错误消息
    */
-  onFileError: (callback: (error: string) => void) => void;
+  onFileError: (callback: (data: FileErrorData) => void) => void;
 
   /**
    * 监听初始文件打开事件

@@ -1,8 +1,8 @@
 import chokidar, { FSWatcher } from 'chokidar';
 
 /**
- * FileWatcher - 负责监视文件变化
- * 
+ * FileWatcher - 负责监视多个文件变化
+ *
  * 需求：3.1, 3.2, 6.3
  * - 3.1: 当已打开的 Markdown 文件在外部被修改时，应用程序应当检测到文件变化
  * - 3.2: 当检测到文件变化时，应用程序应当自动重新加载文件内容
@@ -10,77 +10,99 @@ import chokidar, { FSWatcher } from 'chokidar';
  */
 
 export type FileChangeCallback = (filePath: string) => void;
-export type FileErrorCallback = (error: Error) => void;
+export type FileErrorCallback = (error: Error, filePath: string | null) => void;
 
 export class FileWatcher {
   private watcher: FSWatcher | null = null;
-  private currentFilePath: string | null = null;
+  private watchedFiles: Set<string> = new Set();
   private changeCallbacks: FileChangeCallback[] = [];
   private errorCallbacks: FileErrorCallback[] = [];
-  private debounceTimer: NodeJS.Timeout | null = null;
+  private debounceTimers: Map<string, NodeJS.Timeout> = new Map();
   private readonly debounceDelay: number = 300; // 300ms 防抖延迟
 
   /**
-   * 开始监视指定文件
-   * 需求 3.1: 检测文件变化
-   * 
+   * 添加文件到监视列表
    * @param filePath 要监视的文件路径
    */
-  watch(filePath: string): void {
-    // 如果已经在监视其他文件，先停止
-    if (this.watcher) {
-      this.unwatch();
+  addFile(filePath: string): void {
+    // 如果已经在监视，跳过
+    if (this.watchedFiles.has(filePath)) {
+      return;
     }
 
     try {
-      this.currentFilePath = filePath;
+      if (!this.watcher) {
+        // 首次监视，创建 watcher
+        this.watcher = chokidar.watch(filePath, {
+          persistent: true,
+          ignoreInitial: true,
+          awaitWriteFinish: {
+            stabilityThreshold: 100,
+            pollInterval: 50
+          }
+        });
 
-      // 使用 chokidar 监视文件
-      this.watcher = chokidar.watch(filePath, {
-        persistent: true,
-        ignoreInitial: true, // 忽略初始添加事件
-        awaitWriteFinish: {
-          stabilityThreshold: 100, // 文件稳定后才触发事件
-          pollInterval: 50
-        }
-      });
+        this.setupWatcherEvents();
+      } else {
+        // 添加到现有 watcher
+        this.watcher.add(filePath);
+      }
 
-      // 监听文件变化事件
-      // 需求 3.2: 添加防抖以优化性能
-      this.watcher.on('change', (path: string) => {
-        this.debouncedNotifyChange(path);
-      });
-
-      // 监听文件删除事件
-      this.watcher.on('unlink', (path: string) => {
-        this.notifyError(new Error(`文件已被删除: ${path}`));
-      });
-
-      // 监听错误事件
-      // 需求 6.3: 记录错误但继续运行
-      this.watcher.on('error', (error: Error) => {
-        console.error('文件监视错误:', error);
-        this.notifyError(error);
-        // 不中断应用，继续运行
-      });
-
+      this.watchedFiles.add(filePath);
     } catch (error) {
-      // 需求 6.3: 容错处理
-      console.error('启动文件监视失败:', error);
-      this.notifyError(error as Error);
-      // 不抛出异常，允许应用继续运行
+      console.error('添加文件监视失败:', error);
+      this.notifyError(error as Error, filePath);
     }
   }
 
   /**
-   * 停止监视当前文件
+   * 从监视列表移除文件
+   * @param filePath 要移除的文件路径
+   */
+  removeFile(filePath: string): void {
+    if (!this.watchedFiles.has(filePath)) {
+      return;
+    }
+
+    // 清除该文件的防抖定时器
+    const timer = this.debounceTimers.get(filePath);
+    if (timer) {
+      clearTimeout(timer);
+      this.debounceTimers.delete(filePath);
+    }
+
+    // 从 watcher 移除
+    if (this.watcher) {
+      this.watcher.unwatch(filePath);
+    }
+
+    this.watchedFiles.delete(filePath);
+
+    // 如果没有文件需要监视了，关闭 watcher
+    if (this.watchedFiles.size === 0 && this.watcher) {
+      this.watcher.close();
+      this.watcher = null;
+    }
+  }
+
+  /**
+   * 开始监视指定文件（兼容旧 API）
+   * @deprecated 请使用 addFile 代替
+   * @param filePath 要监视的文件路径
+   */
+  watch(filePath: string): void {
+    this.addFile(filePath);
+  }
+
+  /**
+   * 停止监视所有文件
    */
   async unwatch(): Promise<void> {
-    // 清除防抖定时器
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
-      this.debounceTimer = null;
+    // 清除所有防抖定时器
+    for (const timer of this.debounceTimers.values()) {
+      clearTimeout(timer);
     }
+    this.debounceTimers.clear();
 
     if (this.watcher) {
       try {
@@ -89,15 +111,38 @@ export class FileWatcher {
         console.error('关闭文件监视器失败:', error);
       } finally {
         this.watcher = null;
-        this.currentFilePath = null;
       }
     }
+
+    this.watchedFiles.clear();
+  }
+
+  /**
+   * 设置 watcher 事件监听
+   */
+  private setupWatcherEvents(): void {
+    if (!this.watcher) return;
+
+    // 监听文件变化事件
+    this.watcher.on('change', (path: string) => {
+      this.debouncedNotifyChange(path);
+    });
+
+    // 监听文件删除事件
+    this.watcher.on('unlink', (path: string) => {
+      this.notifyError(new Error(`文件已被删除: ${path}`), path);
+      this.watchedFiles.delete(path);
+    });
+
+    // 监听错误事件
+    this.watcher.on('error', (error: Error) => {
+      console.error('文件监视错误:', error);
+      this.notifyError(error, null);
+    });
   }
 
   /**
    * 注册文件变化回调
-   * 需求 3.2: 自动重新加载文件内容
-   * 
    * @param callback 文件变化时的回调函数
    */
   onFileChange(callback: FileChangeCallback): void {
@@ -106,8 +151,6 @@ export class FileWatcher {
 
   /**
    * 注册错误回调
-   * 需求 6.3: 错误处理
-   * 
    * @param callback 发生错误时的回调函数
    */
   onFileError(callback: FileErrorCallback): void {
@@ -116,7 +159,6 @@ export class FileWatcher {
 
   /**
    * 移除文件变化回调
-   * 
    * @param callback 要移除的回调函数
    */
   removeFileChangeCallback(callback: FileChangeCallback): void {
@@ -128,7 +170,6 @@ export class FileWatcher {
 
   /**
    * 移除错误回调
-   * 
    * @param callback 要移除的回调函数
    */
   removeFileErrorCallback(callback: FileErrorCallback): void {
@@ -139,45 +180,52 @@ export class FileWatcher {
   }
 
   /**
-   * 获取当前监视的文件路径
-   * 
-   * @returns 当前监视的文件路径，如果没有则返回 null
+   * 检查是否正在监视指定文件
+   * @param filePath 文件路径
+   * @returns 是否正在监视
    */
-  getCurrentFilePath(): string | null {
-    return this.currentFilePath;
+  isWatchingFile(filePath: string): boolean {
+    return this.watchedFiles.has(filePath);
   }
 
   /**
-   * 检查是否正在监视文件
-   * 
+   * 获取所有正在监视的文件
+   * @returns 文件路径数组
+   */
+  getWatchedFiles(): string[] {
+    return Array.from(this.watchedFiles);
+  }
+
+  /**
+   * 检查是否有文件在监视
    * @returns 是否正在监视
    */
   isWatching(): boolean {
-    return this.watcher !== null;
+    return this.watcher !== null && this.watchedFiles.size > 0;
   }
 
   /**
    * 通知所有注册的变化回调（带防抖）
-   * 需求 3.2: 防抖优化，避免频繁更新
-   * 
    * @param filePath 变化的文件路径
    */
   private debouncedNotifyChange(filePath: string): void {
-    // 清除之前的定时器
-    if (this.debounceTimer) {
-      clearTimeout(this.debounceTimer);
+    // 清除该文件之前的定时器
+    const existingTimer = this.debounceTimers.get(filePath);
+    if (existingTimer) {
+      clearTimeout(existingTimer);
     }
 
     // 设置新的定时器
-    this.debounceTimer = setTimeout(() => {
+    const timer = setTimeout(() => {
       this.notifyChange(filePath);
-      this.debounceTimer = null;
+      this.debounceTimers.delete(filePath);
     }, this.debounceDelay);
+
+    this.debounceTimers.set(filePath, timer);
   }
 
   /**
    * 通知所有注册的变化回调
-   * 
    * @param filePath 变化的文件路径
    */
   private notifyChange(filePath: string): void {
@@ -192,13 +240,13 @@ export class FileWatcher {
 
   /**
    * 通知所有注册的错误回调
-   * 
    * @param error 错误对象
+   * @param filePath 相关文件路径
    */
-  private notifyError(error: Error): void {
+  private notifyError(error: Error, filePath: string | null): void {
     this.errorCallbacks.forEach(callback => {
       try {
-        callback(error);
+        callback(error, filePath);
       } catch (err) {
         console.error('错误回调执行失败:', err);
       }

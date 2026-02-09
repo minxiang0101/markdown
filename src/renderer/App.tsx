@@ -7,8 +7,9 @@
 // - 6.1: 如果文件读取失败，则应用程序应当显示包含错误原因的提示消息
 // - 6.2: 如果 Markdown 渲染失败，则应用程序应当显示错误信息并保持之前的预览内容
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import { Toolbar } from './Toolbar'
+import { TabBar, TabInfo } from './TabBar'
 import { PreviewPane } from './PreviewPane'
 import ErrorToast from './ErrorToast'
 import './App.css'
@@ -21,60 +22,102 @@ interface ErrorInfo {
   message: string;
 }
 
+/**
+ * 生成唯一 Tab ID
+ */
+const generateTabId = (): string => {
+  return `tab-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+};
+
+/**
+ * 从文件路径提取文件名
+ */
+const getFileName = (filePath: string): string => {
+  const parts = filePath.split(/[\\/]/);
+  return parts[parts.length - 1];
+};
+
 function App() {
-  // 定义应用状态（需求：1.2, 1.4, 3.2, 6.1）
-  const [currentFile, setCurrentFile] = useState<string | null>(null)
-  const [content, setContent] = useState<string>('')
+  // 多标签状态
+  const [tabs, setTabs] = useState<TabInfo[]>([])
+  const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [isDragging, setIsDragging] = useState<boolean>(false)
 
+  // 获取当前激活标签的内容
+  const activeTab = tabs.find(t => t.id === activeTabId)
+  const activeContent = activeTab?.content || ''
+
   /**
-   * 打开文件处理函数
-   * 需求 1.2: 加载文件内容
-   * 需求 1.4: 错误处理
-   * 需求 6.1: 显示错误消息
+   * 打开文件并添加为新标签（或切换到已存在的标签）
    */
-  const handleOpenFile = async () => {
+  const openFile = useCallback(async (filePath: string) => {
+    // 检查文件是否已打开
+    const existingTab = tabs.find(t => t.filePath === filePath)
+    if (existingTab) {
+      setActiveTabId(existingTab.id)
+      return
+    }
+
     try {
-      // 调用 Electron API 打开文件对话框
-      const filePath = await window.electronAPI.openFile()
-      
-      if (filePath) {
-        setCurrentFile(filePath)
-        // 加载文件内容
-        await loadFileContent(filePath)
+      const content = await window.electronAPI.readFile(filePath)
+      const newTab: TabInfo = {
+        id: generateTabId(),
+        filePath,
+        fileName: getFileName(filePath),
+        content,
       }
+
+      setTabs(prev => [...prev, newTab])
+      setActiveTabId(newTab.id)
+      setError(null)
     } catch (err) {
-      // 需求 1.4, 6.1: 显示错误消息并保持当前状态
       const errorMessage = err instanceof Error ? err.message : '打开文件失败'
-      setError({
-        type: 'file-read',
-        message: errorMessage
-      })
+      setError({ type: 'file-read', message: errorMessage })
+    }
+  }, [tabs])
+
+  /**
+   * 处理标签选择
+   */
+  const handleTabSelect = (tabId: string) => {
+    setActiveTabId(tabId)
+  }
+
+  /**
+   * 处理标签关闭
+   */
+  const handleTabClose = async (tabId: string) => {
+    const tabToClose = tabs.find(t => t.id === tabId)
+    if (!tabToClose) return
+
+    // 通知主进程停止监视该文件
+    try {
+      await window.electronAPI.closeFile(tabToClose.filePath)
+    } catch (err) {
+      console.error('关闭文件监视失败:', err)
+    }
+
+    // 移除标签
+    const newTabs = tabs.filter(t => t.id !== tabId)
+    setTabs(newTabs)
+
+    // 如果关闭的是当前激活的标签，切换到其他标签
+    if (activeTabId === tabId) {
+      if (newTabs.length > 0) {
+        // 切换到最后一个标签
+        setActiveTabId(newTabs[newTabs.length - 1].id)
+      } else {
+        setActiveTabId(null)
+      }
     }
   }
 
   /**
-   * 加载文件内容处理函数
-   * 需求 1.2: 加载文件内容
-   * 需求 1.4: 错误处理
-   * 需求 6.1: 显示错误消息
+   * 处理标签重排序
    */
-  const loadFileContent = async (filePath: string) => {
-    try {
-      // 读取文件内容
-      const fileContent = await window.electronAPI.readFile(filePath)
-      setContent(fileContent)
-      setError(null)
-    } catch (err) {
-      // 需求 1.4, 6.1: 显示错误消息并保持当前状态
-      const errorMessage = err instanceof Error ? err.message : '读取文件失败'
-      setError({
-        type: 'file-read',
-        message: errorMessage
-      })
-      // 保持当前内容不变
-    }
+  const handleTabReorder = (newTabs: TabInfo[]) => {
+    setTabs(newTabs)
   }
 
   /**
@@ -82,15 +125,6 @@ function App() {
    */
   const handleCloseError = () => {
     setError(null)
-  }
-
-  /**
-   * 提取文件名
-   */
-  const getFileName = (filePath: string | null): string | null => {
-    if (!filePath) return null
-    const parts = filePath.split(/[\\/]/)
-    return parts[parts.length - 1]
   }
 
   /**
@@ -123,7 +157,7 @@ function App() {
   }
 
   /**
-   * 处理文件放置
+   * 处理文件放置（支持多文件）
    */
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault()
@@ -131,21 +165,22 @@ function App() {
     setIsDragging(false)
 
     const files = Array.from(e.dataTransfer.files)
-    if (files.length > 0) {
-      const file = files[0]
-      // 在 Electron 中，File 对象有 path 属性
+    for (const file of files) {
       const filePath = (file as any).path
-
-      // 检查是否为 Markdown 文件
       if (filePath && (filePath.endsWith('.md') || filePath.endsWith('.markdown'))) {
-        setCurrentFile(filePath)
-        await loadFileContent(filePath)
-      } else {
-        setError({
-          type: 'file-read',
-          message: '只支持 .md 和 .markdown 文件'
-        })
+        await openFile(filePath)
       }
+    }
+
+    // 如果没有有效文件
+    if (files.length > 0 && !files.some(f => {
+      const path = (f as any).path
+      return path && (path.endsWith('.md') || path.endsWith('.markdown'))
+    })) {
+      setError({
+        type: 'file-read',
+        message: '只支持 .md 和 .markdown 文件'
+      })
     }
   }
 
@@ -155,29 +190,54 @@ function App() {
    * 需求 3.3: 更新显示而不需要用户手动刷新
    */
   useEffect(() => {
-    // 监听文件变化事件
-    window.electronAPI.onFileChanged((newContent: string) => {
-      // 需求 3.2, 3.3: 自动更新内容
-      setContent(newContent)
+    // 监听文件变化事件（包含文件路径）
+    window.electronAPI.onFileChanged((data: { filePath: string; content: string }) => {
+      setTabs(prev => prev.map(tab =>
+        tab.filePath === data.filePath
+          ? { ...tab, content: data.content }
+          : tab
+      ))
       setError(null)
     })
 
     // 监听文件错误事件
-    // 需求 6.1: 显示错误消息
-    window.electronAPI.onFileError((errorMessage: string) => {
+    window.electronAPI.onFileError((data: { filePath: string | null; message: string }) => {
       setError({
         type: 'file-watch',
-        message: errorMessage
+        message: data.message
       })
-      // 需求 6.2: 保持之前的预览内容
     })
 
     // 监听初始文件打开事件（双击文件或拖拽到应用图标打开）
     window.electronAPI.onOpenInitialFile(async (filePath: string) => {
-      setCurrentFile(filePath)
+      // 检查文件是否已打开
+      setTabs(prev => {
+        const existingTab = prev.find(t => t.filePath === filePath)
+        if (existingTab) {
+          setActiveTabId(existingTab.id)
+          return prev
+        }
+        return prev
+      })
+
+      // 如果文件未打开，则打开它
       try {
-        const fileContent = await window.electronAPI.readFile(filePath)
-        setContent(fileContent)
+        const content = await window.electronAPI.readFile(filePath)
+        const newTab: TabInfo = {
+          id: generateTabId(),
+          filePath,
+          fileName: getFileName(filePath),
+          content,
+        }
+
+        setTabs(prev => {
+          // 再次检查是否已存在（防止竞态条件）
+          if (prev.find(t => t.filePath === filePath)) {
+            return prev
+          }
+          return [...prev, newTab]
+        })
+        setActiveTabId(newTab.id)
         setError(null)
       } catch (err) {
         setError({
@@ -189,23 +249,27 @@ function App() {
   }, [])
 
   return (
-    <div 
+    <div
       className={`app ${isDragging ? 'dragging' : ''}`}
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <Toolbar 
-        onOpenFile={handleOpenFile} 
-        currentFileName={getFileName(currentFile)} 
+      <Toolbar />
+      <TabBar
+        tabs={tabs}
+        activeTabId={activeTabId}
+        onTabSelect={handleTabSelect}
+        onTabClose={handleTabClose}
+        onTabReorder={handleTabReorder}
       />
-      <PreviewPane 
-        content={content} 
-        error={error?.message || null} 
+      <PreviewPane
+        content={activeContent}
+        error={error?.message || null}
       />
-      <ErrorToast 
-        error={error} 
+      <ErrorToast
+        error={error}
         onClose={handleCloseError}
         autoCloseDuration={5000}
       />

@@ -1,4 +1,4 @@
-import { Menu, MenuItemConstructorOptions, app, shell } from 'electron';
+import { Menu, MenuItemConstructorOptions, app, shell, BrowserWindow, dialog } from 'electron';
 
 /**
  * MenuManager - 负责创建和管理应用菜单
@@ -26,11 +26,33 @@ export class MenuManager {
           { label: '退出', role: 'quit' as const }
         ]
       }] : []),
-      
+
       // 文件菜单
       {
         label: '文件',
         submenu: [
+          {
+            label: '打开文件',
+            accelerator: 'CmdOrCtrl+O',
+            click: async () => {
+              const window = BrowserWindow.getFocusedWindow();
+              if (!window) return;
+
+              const result = await dialog.showOpenDialog(window, {
+                title: '选择 Markdown 文件',
+                filters: [
+                  { name: 'Markdown 文件', extensions: ['md', 'markdown'] },
+                  { name: '所有文件', extensions: ['*'] }
+                ],
+                properties: ['openFile']
+              });
+
+              if (!result.canceled && result.filePaths.length > 0) {
+                window.webContents.send('open-initial-file', result.filePaths[0]);
+              }
+            }
+          },
+          { type: 'separator' as const },
           isMac ? { label: '关闭', role: 'close' as const } : { label: '退出', role: 'quit' as const }
         ]
       },
