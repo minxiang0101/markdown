@@ -4,6 +4,7 @@
   "version": "0.1.0",
   "type": "module",
   "description": "Markdown 预览工具 - 基于 Electron + React + Vite 的桌面应用",
+  "license": "MIT",
   "author": "Your Name",
   "main": "dist-electron/main.cjs",
   "scripts": {
