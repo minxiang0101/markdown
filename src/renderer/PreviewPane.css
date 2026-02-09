@@ -1,0 +1,332 @@
+/* PreviewPane 样式 */
+/* 需求 4.2, 4.4: 响应式布局 */
+
+.preview-pane {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 2rem;
+  background-color: #ffffff;
+  /* 需求 4.4: 响应式布局 - 自动调整以适应窗口尺寸 */
+  width: 100%;
+  height: 100%;
+  box-sizing: border-box;
+}
+
+/* 空状态样式 */
+.empty-state {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  color: #999;
+  font-size: 16px;
+}
+
+/* 错误消息样式 */
+.error-message {
+  padding: 20px;
+  background-color: #fee;
+  border: 1px solid #fcc;
+  border-radius: 4px;
+  color: #c33;
+}
+
+.error-message h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-size: 18px;
+}
+
+.error-message p {
+  margin: 0;
+}
+
+/* 渲染错误样式 */
+.render-error {
+  padding: 10px;
+  background-color: #fff3cd;
+  border: 1px solid #ffc107;
+  border-radius: 4px;
+  color: #856404;
+  margin-bottom: 20px;
+}
+
+.render-error p {
+  margin: 0;
+}
+
+/* 预览内容样式 */
+/* 需求 2.2, 2.3, 2.4: 正确显示 Markdown 元素 */
+.preview-content {
+  max-width: 900px;
+  margin: 0 auto;
+  line-height: 1.6;
+  color: #24292e;
+  word-wrap: break-word;
+}
+
+/* 标题样式 - 需求 2.2 */
+.preview-content h1,
+.preview-content h2,
+.preview-content h3,
+.preview-content h4,
+.preview-content h5,
+.preview-content h6 {
+  margin-top: 24px;
+  margin-bottom: 16px;
+  font-weight: 600;
+  line-height: 1.25;
+  color: #24292e;
+}
+
+.preview-content h1:first-child,
+.preview-content h2:first-child,
+.preview-content h3:first-child,
+.preview-content h4:first-child,
+.preview-content h5:first-child,
+.preview-content h6:first-child {
+  margin-top: 0;
+}
+
+.preview-content h1 {
+  font-size: 2em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.preview-content h2 {
+  font-size: 1.5em;
+  border-bottom: 1px solid #eaecef;
+  padding-bottom: 0.3em;
+}
+
+.preview-content h3 {
+  font-size: 1.25em;
+}
+
+.preview-content h4 {
+  font-size: 1em;
+}
+
+.preview-content h5 {
+  font-size: 0.875em;
+}
+
+.preview-content h6 {
+  font-size: 0.85em;
+  color: #6a737d;
+}
+
+/* 段落样式 */
+.preview-content p {
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+/* 列表样式 - 需求 2.2 */
+.preview-content ul,
+.preview-content ol {
+  margin-top: 0;
+  margin-bottom: 16px;
+  padding-left: 2em;
+}
+
+.preview-content ul ul,
+.preview-content ul ol,
+.preview-content ol ol,
+.preview-content ol ul {
+  margin-top: 0;
+  margin-bottom: 0;
+}
+
+.preview-content li {
+  margin-bottom: 4px;
+  word-wrap: break-word;
+}
+
+.preview-content li > p {
+  margin-top: 16px;
+}
+
+.preview-content li + li {
+  margin-top: 0.25em;
+}
+
+/* 代码块样式 - 需求 2.3 */
+.preview-content code {
+  padding: 0.2em 0.4em;
+  margin: 0;
+  font-size: 85%;
+  background-color: rgba(27, 31, 35, 0.05);
+  border-radius: 3px;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', monospace;
+}
+
+.preview-content pre {
+  padding: 16px;
+  overflow: auto;
+  font-size: 85%;
+  line-height: 1.45;
+  background-color: #f6f8fa;
+  border-radius: 6px;
+  margin-top: 0;
+  margin-bottom: 16px;
+}
+
+.preview-content pre code {
+  display: block;
+  padding: 0;
+  margin: 0;
+  overflow: visible;
+  line-height: inherit;
+  word-wrap: normal;
+  background-color: transparent;
+  border: 0;
+  font-size: 100%;
+  font-family: 'SFMono-Regular', 'Consolas', 'Liberation Mono', 'Menlo', 'Courier', monospace;
+}
+
+/* 代码块滚动条 */
+.preview-content pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+.preview-content pre::-webkit-scrollbar-track {
+  background: #e1e4e8;
+  border-radius: 4px;
+}
+
+.preview-content pre::-webkit-scrollbar-thumb {
+  background: #959da5;
+  border-radius: 4px;
+}
+
+.preview-content pre::-webkit-scrollbar-thumb:hover {
+  background: #6a737d;
+}
+
+/* 链接样式 - 需求 2.2 */
+.preview-content a {
+  color: #0366d6;
+  text-decoration: none;
+}
+
+.preview-content a:hover {
+  text-decoration: underline;
+}
+
+/* 图片样式 - 需求 2.2 */
+.preview-content img {
+  max-width: 100%;
+  height: auto;
+  border-style: none;
+}
+
+/* 表格样式 - 需求 2.4 */
+.preview-content table {
+  border-spacing: 0;
+  border-collapse: collapse;
+  margin-top: 0;
+  margin-bottom: 16px;
+  width: 100%;
+  overflow: auto;
+  display: block;
+}
+
+.preview-content table th,
+.preview-content table td {
+  padding: 6px 13px;
+  border: 1px solid #dfe2e5;
+}
+
+.preview-content table th {
+  font-weight: 600;
+  background-color: #f6f8fa;
+  text-align: left;
+}
+
+.preview-content table tr {
+  background-color: #fff;
+  border-top: 1px solid #c6cbd1;
+}
+
+.preview-content table tr:nth-child(2n) {
+  background-color: #f6f8fa;
+}
+
+.preview-content table img {
+  background-color: transparent;
+}
+
+/* 引用样式 */
+.preview-content blockquote {
+  padding: 0 1em;
+  color: #6a737d;
+  border-left: 0.25em solid #dfe2e5;
+  margin: 0 0 16px 0;
+}
+
+.preview-content blockquote > :first-child {
+  margin-top: 0;
+}
+
+.preview-content blockquote > :last-child {
+  margin-bottom: 0;
+}
+
+/* 水平线样式 */
+.preview-content hr {
+  height: 0.25em;
+  padding: 0;
+  margin: 24px 0;
+  background-color: #e1e4e8;
+  border: 0;
+}
+
+/* 响应式设计 - 需求 4.4 */
+@media (max-width: 768px) {
+  .preview-pane {
+    padding: 1rem;
+  }
+
+  .preview-content {
+    max-width: 100%;
+  }
+
+  .preview-content h1 {
+    font-size: 1.5em;
+  }
+
+  .preview-content h2 {
+    font-size: 1.25em;
+  }
+  
+  .preview-content table {
+    font-size: 0.875em;
+  }
+  
+  .preview-content table th,
+  .preview-content table td {
+    padding: 4px 8px;
+  }
+}
+
+@media (max-width: 480px) {
+  .preview-pane {
+    padding: 0.75rem;
+  }
+  
+  .preview-content h1 {
+    font-size: 1.25em;
+  }
+
+  .preview-content h2 {
+    font-size: 1.125em;
+  }
+  
+  .preview-content pre {
+    padding: 12px;
+    font-size: 80%;
+  }
+}

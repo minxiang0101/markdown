@@ -1,0 +1,34 @@
+/* App 组件全局布局样式 */
+/* 需求 4.1, 4.2: 工具栏在顶部，预览区域在下方 */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  width: 100vw;
+  overflow: hidden;
+  position: relative;
+}
+
+/* 拖拽状态样式 */
+.app.dragging::after {
+  content: '拖放 Markdown 文件到此处';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 123, 255, 0.1);
+  border: 3px dashed #007bff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  color: #007bff;
+  font-weight: bold;
+  pointer-events: none;
+  z-index: 1000;
+}
+
+/* 工具栏样式已移至 Toolbar.css */
+/* 预览面板样式已移至 PreviewPane.css */

@@ -1,0 +1,151 @@
+/* Code Highlighting Theme - GitHub Style */
+/* 需求 2.3: 代码块高亮样式 */
+
+/* Base styles */
+.hljs {
+  display: block;
+  overflow-x: auto;
+  padding: 0.5em;
+  color: #24292e;
+  background: #f6f8fa;
+}
+
+/* Comment */
+.hljs-comment,
+.hljs-quote {
+  color: #6a737d;
+  font-style: italic;
+}
+
+/* Keyword, Selector, Deletion */
+.hljs-keyword,
+.hljs-selector-tag,
+.hljs-deletion {
+  color: #d73a49;
+  font-weight: bold;
+}
+
+/* String, Addition */
+.hljs-string,
+.hljs-addition {
+  color: #032f62;
+}
+
+/* Number, Literal */
+.hljs-number,
+.hljs-literal {
+  color: #005cc5;
+}
+
+/* Built-in, Name */
+.hljs-built_in,
+.hljs-name {
+  color: #6f42c1;
+}
+
+/* Variable, Template Variable */
+.hljs-variable,
+.hljs-template-variable {
+  color: #e36209;
+}
+
+/* Type, Class, Title */
+.hljs-type,
+.hljs-class .hljs-title,
+.hljs-title.class_ {
+  color: #6f42c1;
+  font-weight: bold;
+}
+
+/* Function, Title Function */
+.hljs-function .hljs-title,
+.hljs-title.function_ {
+  color: #6f42c1;
+}
+
+/* Attribute */
+.hljs-attr,
+.hljs-attribute {
+  color: #005cc5;
+}
+
+/* Symbol, Bullet, Link */
+.hljs-symbol,
+.hljs-bullet,
+.hljs-link {
+  color: #032f62;
+}
+
+/* Meta */
+.hljs-meta {
+  color: #005cc5;
+}
+
+/* Section */
+.hljs-section {
+  color: #005cc5;
+  font-weight: bold;
+}
+
+/* Tag */
+.hljs-tag {
+  color: #22863a;
+}
+
+/* Emphasis */
+.hljs-emphasis {
+  font-style: italic;
+}
+
+/* Strong */
+.hljs-strong {
+  font-weight: bold;
+}
+
+/* Formula */
+.hljs-formula {
+  color: #22863a;
+  background: #f0fff4;
+}
+
+/* Selector ID, Selector Class, Selector Pseudo */
+.hljs-selector-id,
+.hljs-selector-class,
+.hljs-selector-pseudo {
+  color: #6f42c1;
+}
+
+/* Doctag */
+.hljs-doctag {
+  color: #d73a49;
+}
+
+/* Subst */
+.hljs-subst {
+  color: #24292e;
+}
+
+/* Regexp */
+.hljs-regexp {
+  color: #032f62;
+}
+
+/* Operator */
+.hljs-operator {
+  color: #d73a49;
+}
+
+/* Params */
+.hljs-params {
+  color: #24292e;
+}
+
+/* Property */
+.hljs-property {
+  color: #005cc5;
+}
+
+/* Punctuation */
+.hljs-punctuation {
+  color: #24292e;
+}
