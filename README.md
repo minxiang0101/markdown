@@ -296,3 +296,7 @@ yarn build:linux
 - **highlight.js**: 代码高亮
 - **DOMPurify**: HTML 清理
 - **chokidar**: 文件监视
+
+## 开源协议
+
+本项目采用 [MIT 许可证](LICENSE) 进行开源。详情请参阅 [LICENSE](LICENSE) 文件。
