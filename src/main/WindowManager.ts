@@ -48,6 +48,9 @@ export class WindowManager {
     // 配置 Content Security Policy
     this.setupContentSecurityPolicy();
 
+    // 禁用默认的拖放文件导航行为，让渲染进程处理拖放
+    this.disableDefaultDragDrop();
+
     // 监听窗口关闭事件
     this.mainWindow.on('closed', () => {
       this.mainWindow = null;
@@ -114,6 +117,24 @@ export class WindowManager {
           ].join(' ')
         }
       });
+    });
+  }
+
+  /**
+   * 禁用默认的拖放文件导航行为
+   * 让渲染进程可以自定义处理拖放事件
+   */
+  private disableDefaultDragDrop(): void {
+    if (!this.mainWindow) {
+      return;
+    }
+
+    // 阻止 Electron 默认将拖放的文件作为导航处理
+    this.mainWindow.webContents.on('will-navigate', (event, url) => {
+      // 如果是文件协议，阻止导航（拖放文件会触发 file:// 导航）
+      if (url.startsWith('file://')) {
+        event.preventDefault();
+      }
     });
   }
 

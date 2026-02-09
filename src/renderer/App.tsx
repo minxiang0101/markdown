@@ -171,6 +171,21 @@ function App() {
       })
       // 需求 6.2: 保持之前的预览内容
     })
+
+    // 监听初始文件打开事件（双击文件或拖拽到应用图标打开）
+    window.electronAPI.onOpenInitialFile(async (filePath: string) => {
+      setCurrentFile(filePath)
+      try {
+        const fileContent = await window.electronAPI.readFile(filePath)
+        setContent(fileContent)
+        setError(null)
+      } catch (err) {
+        setError({
+          type: 'file-read',
+          message: err instanceof Error ? err.message : '读取文件失败'
+        })
+      }
+    })
   }, [])
 
   return (

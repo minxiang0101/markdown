@@ -19,7 +19,7 @@ export interface ElectronAPI {
    * @returns 选中的文件路径，如果用户取消则返回 null
    */
   openFile: () => Promise<string | null>;
-  
+
   /**
    * 读取文件内容
    * 需求 1.2: 加载文件内容
@@ -27,20 +27,27 @@ export interface ElectronAPI {
    * @returns 文件内容
    */
   readFile: (filePath: string) => Promise<string>;
-  
+
   /**
    * 监听文件变化事件
    * 需求 3.2: 自动重新加载文件内容
    * @param callback 文件变化时的回调函数
    */
   onFileChanged: (callback: (content: string) => void) => void;
-  
+
   /**
    * 监听文件错误事件
    * 需求 6.1: 显示错误消息
    * @param callback 发生错误时的回调函数
    */
   onFileError: (callback: (error: string) => void) => void;
+
+  /**
+   * 监听初始文件打开事件
+   * 当通过双击文件或拖拽文件到应用图标打开时触发
+   * @param callback 接收文件路径的回调函数
+   */
+  onOpenInitialFile: (callback: (filePath: string) => void) => void;
 }
 
 /**
@@ -82,6 +89,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
       // 验证接收到的错误是字符串
       if (typeof error === 'string') {
         callback(error);
+      }
+    });
+  },
+  onOpenInitialFile: (callback: (filePath: string) => void) => {
+    // 验证回调函数
+    if (typeof callback !== 'function') {
+      throw new Error('回调函数必须是一个函数');
+    }
+    ipcRenderer.on('open-initial-file', (_event, filePath) => {
+      // 验证接收到的路径是字符串
+      if (typeof filePath === 'string') {
+        callback(filePath);
       }
     });
   }
