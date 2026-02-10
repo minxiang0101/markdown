@@ -1,7 +1,6 @@
 // FloatingToolbar 组件 - 浮动工具栏
 // 显示在预览区底部中间，提供下载和缩放功能
 
-import { useState } from 'react'
 import './FloatingToolbar.css'
 
 export interface FloatingToolbarProps {
