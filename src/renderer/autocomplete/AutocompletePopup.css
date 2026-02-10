@@ -1,0 +1,121 @@
+/* 联想弹窗样式 */
+
+.autocomplete-popup {
+  position: fixed;
+  z-index: 1000;
+  min-width: 280px;
+  max-width: 400px;
+  background: var(--bg-secondary, #ffffff);
+  border: 1px solid var(--border-color, #e0e0e0);
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  overflow: hidden;
+  font-size: 14px;
+}
+
+.autocomplete-list {
+  max-height: 280px;
+  overflow-y: auto;
+}
+
+.autocomplete-item {
+  display: flex;
+  flex-direction: column;
+  padding: 8px 12px;
+  cursor: pointer;
+  transition: background-color 0.1s ease;
+}
+
+.autocomplete-item:hover {
+  background-color: var(--bg-hover, #f5f5f5);
+}
+
+.autocomplete-item.selected {
+  background-color: var(--bg-selected, #e3f2fd);
+}
+
+.autocomplete-item-label {
+  font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+  color: var(--text-primary, #333333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-item-description {
+  font-size: 12px;
+  color: var(--text-secondary, #666666);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.autocomplete-footer {
+  display: flex;
+  gap: 12px;
+  padding: 6px 12px;
+  background-color: var(--bg-tertiary, #f8f8f8);
+  border-top: 1px solid var(--border-color, #e0e0e0);
+  font-size: 11px;
+  color: var(--text-secondary, #888888);
+}
+
+/* 深色模式支持 */
+@media (prefers-color-scheme: dark) {
+  .autocomplete-popup {
+    background: #2d2d2d;
+    border-color: #404040;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+  }
+
+  .autocomplete-item:hover {
+    background-color: #3d3d3d;
+  }
+
+  .autocomplete-item.selected {
+    background-color: #1e3a5f;
+  }
+
+  .autocomplete-item-label {
+    color: #e0e0e0;
+  }
+
+  .autocomplete-item-description {
+    color: #999999;
+  }
+
+  .autocomplete-footer {
+    background-color: #252525;
+    border-color: #404040;
+    color: #777777;
+  }
+}
+
+/* 滚动条样式 */
+.autocomplete-list::-webkit-scrollbar {
+  width: 6px;
+}
+
+.autocomplete-list::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.autocomplete-list::-webkit-scrollbar-thumb {
+  background-color: var(--scrollbar-thumb, #c0c0c0);
+  border-radius: 3px;
+}
+
+.autocomplete-list::-webkit-scrollbar-thumb:hover {
+  background-color: var(--scrollbar-thumb-hover, #a0a0a0);
+}
+
+@media (prefers-color-scheme: dark) {
+  .autocomplete-list::-webkit-scrollbar-thumb {
+    background-color: #555555;
+  }
+
+  .autocomplete-list::-webkit-scrollbar-thumb:hover {
+    background-color: #666666;
+  }
+}
