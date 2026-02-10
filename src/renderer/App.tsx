@@ -12,6 +12,9 @@ import { Toolbar } from './Toolbar'
 import { TabBar, TabInfo } from './TabBar'
 import { Sidebar } from './Sidebar'
 import { PreviewPane } from './PreviewPane'
+import { EditorPane } from './EditorPane'
+import { FloatingToolbar } from './FloatingToolbar'
+import { defaultRenderer } from './MarkdownRenderer'
 import ErrorToast from './ErrorToast'
 import './App.css'
 
@@ -45,6 +48,7 @@ function App() {
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [isDragging, setIsDragging] = useState<boolean>(false)
   const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false)
+  const [zoom, setZoom] = useState<number>(100)
 
   // 获取当前激活标签的内容
   const activeTab = tabs.find(t => t.id === activeTabId)
@@ -68,6 +72,9 @@ function App() {
         filePath,
         fileName: getFileName(filePath),
         content,
+        isEditing: false,
+        isNew: false,
+        originalContent: content,
       }
 
       setTabs(prev => [...prev, newTab])
@@ -78,6 +85,135 @@ function App() {
       setError({ type: 'file-read', message: errorMessage })
     }
   }, [tabs])
+
+  /**
+   * 新建文件
+   */
+  const createNewFile = useCallback(() => {
+    const newTabId = generateTabId()
+    const defaultContent = '# 新建文档\n\n在此输入内容...'
+    const newTab: TabInfo = {
+      id: newTabId,
+      filePath: '',
+      fileName: '未命名.md',
+      content: defaultContent,
+      isEditing: true,  // 新建文件默认进入编辑模式
+      isNew: true,
+      originalContent: '',  // 新文件原始内容为空
+    }
+
+    setTabs(prev => [...prev, newTab])
+    setActiveTabId(newTabId)
+    setError(null)
+  }, [])
+
+  /**
+   * 打开文件对话框
+   */
+  const handleOpenFileDialog = useCallback(async () => {
+    try {
+      const filePath = await window.electronAPI.openFile()
+      if (filePath) {
+        await openFile(filePath)
+      }
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '打开文件失败'
+      setError({ type: 'file-read', message: errorMessage })
+    }
+  }, [openFile])
+
+  /**
+   * 更新标签内容
+   */
+  const updateTabContent = useCallback((tabId: string, content: string) => {
+    setTabs(prev => prev.map(tab =>
+      tab.id === tabId
+        ? { ...tab, content }
+        : tab
+    ))
+  }, [])
+
+  /**
+   * 保存文件
+   */
+  const saveFile = useCallback(async (tabId: string) => {
+    const tab = tabs.find(t => t.id === tabId)
+    if (!tab) return
+
+    try {
+      let filePath = tab.filePath
+
+      // 如果是新文件，显示保存对话框
+      if (tab.isNew || !filePath) {
+        const selectedPath = await window.electronAPI.saveFileDialog(tab.fileName)
+        if (!selectedPath) {
+          return // 用户取消了保存
+        }
+        filePath = selectedPath
+      }
+
+      // 保存文件
+      await window.electronAPI.saveFile(filePath, tab.content)
+
+      // 更新标签信息
+      setTabs(prev => prev.map(t =>
+        t.id === tabId
+          ? {
+              ...t,
+              filePath,
+              fileName: getFileName(filePath),
+              isNew: false,
+              originalContent: t.content,
+            }
+          : t
+      ))
+
+      setError(null)
+    } catch (err) {
+      const errorMessage = err instanceof Error ? err.message : '保存文件失败'
+      setError({ type: 'file-read', message: errorMessage })
+    }
+  }, [tabs])
+
+  /**
+   * 切换编辑/预览模式
+   */
+  const toggleEditMode = useCallback((tabId: string) => {
+    const tab = tabs.find(t => t.id === tabId)
+    if (!tab) return
+
+    // 如果当前是编辑模式，要切换到预览模式，检查是否有未保存的更改
+    if (tab.isEditing) {
+      const hasUnsavedChanges = tab.content !== tab.originalContent
+      if (hasUnsavedChanges) {
+        // 提示用户保存
+        const shouldSave = window.confirm('当前文件有未保存的更改，是否先保存？\n\n点击"确定"保存后切换到预览\n点击"取消"放弃更改并切换到预览')
+        if (shouldSave) {
+          // 保存后切换
+          saveFile(tabId).then(() => {
+            setTabs(prev => prev.map(t =>
+              t.id === tabId ? { ...t, isEditing: false } : t
+            ))
+          })
+          return
+        }
+        // 用户选择不保存，恢复原始内容后切换
+        setTabs(prev => prev.map(t =>
+          t.id === tabId
+            ? { ...t, isEditing: false, content: t.originalContent }
+            : t
+        ))
+        return
+      }
+    }
+
+    // 没有未保存更改，直接切换
+    setTabs(prev => prev.map(t =>
+      t.id === tabId
+        ? { ...t, isEditing: !t.isEditing }
+        : t
+    ))
+  }, [tabs, saveFile])
 
   /**
    * 处理标签选择
@@ -194,6 +330,52 @@ function App() {
   }
 
   /**
+   * 导出为 HTML 文件
+   */
+  const handleExport = useCallback(() => {
+    if (!activeContent) return
+
+    try {
+      const renderedHtml = defaultRenderer.render(activeContent)
+      const htmlContent = `<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Markdown 导出</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; max-width: 900px; margin: 0 auto; padding: 2rem; line-height: 1.6; }
+    pre { background: #f6f8fa; padding: 16px; border-radius: 6px; overflow: auto; }
+    code { font-family: 'SFMono-Regular', Consolas, monospace; }
+    table { border-collapse: collapse; width: 100%; }
+    th, td { border: 1px solid #dfe2e5; padding: 6px 13px; }
+    th { background: #f6f8fa; }
+    blockquote { border-left: 4px solid #dfe2e5; margin: 0; padding-left: 1em; color: #6a737d; }
+  </style>
+</head>
+<body>
+${renderedHtml}
+</body>
+</html>`
+
+      const blob = new Blob([htmlContent], { type: 'text/html' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      a.href = url
+      a.download = activeTab?.fileName?.replace(/\.(md|markdown)$/i, '.html') || 'markdown-export.html'
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+    } catch (err) {
+      setError({
+        type: 'render',
+        message: '导出失败: ' + (err instanceof Error ? err.message : '未知错误')
+      })
+    }
+  }, [activeContent, activeTab?.fileName])
+
+  /**
    * 设置文件变化监听
    * 需求 3.2: 自动重新加载文件内容
    * 需求 3.3: 更新显示而不需要用户手动刷新
@@ -239,6 +421,9 @@ function App() {
             filePath,
             fileName: getFileName(filePath),
             content,
+            isEditing: false,
+            isNew: false,
+            originalContent: content,
           }
           setActiveTabId(newTabId)
           return [...prev, newTab]
@@ -253,6 +438,9 @@ function App() {
     })
   }, [])
 
+  // 计算当前标签是否有未保存的更改
+  const hasChanges = activeTab ? activeTab.content !== activeTab.originalContent : false
+
   return (
     <div
       className={`app ${isDragging ? 'dragging' : ''}`}
@@ -261,7 +449,7 @@ function App() {
       onDragOver={handleDragOver}
       onDrop={handleDrop}
     >
-      <Toolbar />
+      <Toolbar onNewFile={createNewFile} onOpenFile={handleOpenFileDialog} />
       <TabBar
         tabs={tabs}
         activeTabId={activeTabId}
@@ -277,11 +465,32 @@ function App() {
             onToggle={handleSidebarToggle}
           />
         )}
-        <PreviewPane
-          content={activeContent}
-          error={error?.message || null}
-        />
+        {activeTab?.isEditing ? (
+          <EditorPane
+            content={activeContent}
+            onChange={(content) => updateTabContent(activeTab.id, content)}
+            onSave={() => saveFile(activeTab.id)}
+          />
+        ) : (
+          <PreviewPane
+            content={activeContent}
+            error={error?.message || null}
+            onDoubleClick={() => activeTab && toggleEditMode(activeTab.id)}
+            zoom={zoom}
+          />
+        )}
       </div>
+      {activeTab && (
+        <FloatingToolbar
+          isEditing={activeTab.isEditing}
+          onToggleMode={() => toggleEditMode(activeTab.id)}
+          onSave={() => saveFile(activeTab.id)}
+          hasChanges={hasChanges}
+          onExport={handleExport}
+          zoom={zoom}
+          onZoomChange={setZoom}
+        />
+      )}
       <ErrorToast
         error={error}
         onClose={handleCloseError}

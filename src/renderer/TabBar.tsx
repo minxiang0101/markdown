@@ -9,6 +9,9 @@ export interface TabInfo {
   filePath: string;
   fileName: string;
   content: string;
+  isEditing: boolean;       // 是否处于编辑模式
+  isNew: boolean;           // 是否是新建的未保存文件
+  originalContent: string;  // 原始内容（用于检测是否有修改）
 }
 
 /**
@@ -140,30 +143,36 @@ export function TabBar({ tabs, activeTabId, onTabSelect, onTabClose, onTabReorde
 
   return (
     <div className="tab-bar">
-      {tabs.map((tab) => (
-        <div
-          key={tab.id}
-          className={`tab ${tab.id === activeTabId ? 'active' : ''} ${tab.id === dragOverTabId ? 'drag-over' : ''}`}
-          draggable
-          onClick={() => handleTabClick(tab.id)}
-          onDragStart={(e) => handleDragStart(e, tab.id)}
-          onDragEnd={handleDragEnd}
-          onDragEnter={(e) => handleDragEnter(e, tab.id)}
-          onDragLeave={handleDragLeave}
-          onDragOver={handleDragOver}
-          onDrop={(e) => handleDrop(e, tab.id)}
-          title={tab.filePath}
-        >
-          <span className="tab-name">{tab.fileName}</span>
-          <button
-            className="tab-close"
-            onClick={(e) => handleCloseClick(e, tab.id)}
-            aria-label={`关闭 ${tab.fileName}`}
+      {tabs.map((tab) => {
+        const hasChanges = tab.content !== tab.originalContent;
+        return (
+          <div
+            key={tab.id}
+            className={`tab ${tab.id === activeTabId ? 'active' : ''} ${tab.id === dragOverTabId ? 'drag-over' : ''} ${hasChanges ? 'has-changes' : ''}`}
+            draggable
+            onClick={() => handleTabClick(tab.id)}
+            onDragStart={(e) => handleDragStart(e, tab.id)}
+            onDragEnd={handleDragEnd}
+            onDragEnter={(e) => handleDragEnter(e, tab.id)}
+            onDragLeave={handleDragLeave}
+            onDragOver={handleDragOver}
+            onDrop={(e) => handleDrop(e, tab.id)}
+            title={tab.filePath}
           >
-            ×
-          </button>
-        </div>
-      ))}
+            <span className="tab-name">
+              {hasChanges && <span className="unsaved-dot"></span>}
+              {tab.fileName}
+            </span>
+            <button
+              className="tab-close"
+              onClick={(e) => handleCloseClick(e, tab.id)}
+              aria-label={`关闭 ${tab.fileName}`}
+            >
+              ×
+            </button>
+          </div>
+        );
+      })}
     </div>
   );
 }

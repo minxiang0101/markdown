@@ -176,12 +176,12 @@ export class FileHandler {
   /**
    * 打开并读取文件的便捷方法
    * 结合文件对话框和文件读取
-   * 
+   *
    * @returns 文件操作结果
    */
   async openAndReadFile(): Promise<FileResult> {
     const filePath = await this.openFileDialog();
-    
+
     if (!filePath) {
       return {
         success: false,
@@ -193,5 +193,95 @@ export class FileHandler {
     }
 
     return this.readFile(filePath);
+  }
+
+  /**
+   * 保存文件内容
+   * @param filePath 文件路径
+   * @param content 文件内容
+   * @returns 文件操作结果
+   */
+  async saveFile(filePath: string, content: string): Promise<FileResult> {
+    try {
+      // 验证路径安全性
+      if (!this.isPathSafe(filePath)) {
+        return {
+          success: false,
+          error: {
+            type: 'file-read',
+            message: '无效的文件路径'
+          }
+        };
+      }
+
+      // 验证文件类型
+      if (!this.isMarkdownFile(filePath)) {
+        return {
+          success: false,
+          error: {
+            type: 'file-type',
+            message: '只支持保存 .md 和 .markdown 文件'
+          }
+        };
+      }
+
+      // 写入文件
+      await fs.writeFile(filePath, content, 'utf-8');
+
+      return {
+        success: true,
+        filePath,
+        content
+      };
+    } catch (error: any) {
+      if (error.code === 'EACCES' || error.code === 'EPERM') {
+        return {
+          success: false,
+          error: {
+            type: 'permission-denied',
+            message: `没有权限写入文件: ${filePath}`
+          }
+        };
+      }
+      return {
+        success: false,
+        error: {
+          type: 'file-read',
+          message: `保存文件失败: ${error.message || '未知错误'}`
+        }
+      };
+    }
+  }
+
+  /**
+   * 显示保存文件对话框（用于新建文件）
+   * @param defaultFileName 默认文件名
+   * @returns 选择的文件路径，如果用户取消则返回 null
+   */
+  async saveFileDialog(defaultFileName: string = '未命名.md'): Promise<string | null> {
+    try {
+      const result = await dialog.showSaveDialog({
+        title: '保存 Markdown 文件',
+        defaultPath: defaultFileName,
+        filters: [
+          { name: 'Markdown 文件', extensions: ['md', 'markdown'] }
+        ]
+      });
+
+      if (result.canceled || !result.filePath) {
+        return null;
+      }
+
+      // 确保文件扩展名
+      let filePath = result.filePath;
+      if (!this.isMarkdownFile(filePath)) {
+        filePath += '.md';
+      }
+
+      return filePath;
+    } catch (error) {
+      console.error('保存文件对话框失败:', error);
+      return null;
+    }
   }
 }

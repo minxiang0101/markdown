@@ -73,12 +73,30 @@
 
 /* 标签名称 */
 .tab-name {
+  display: flex;
+  align-items: center;
+  gap: 4px;
   flex: 1;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
   font-size: 0.8125rem;
   color: #333;
+}
+
+/* 未保存标记 */
+.unsaved-dot {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  background-color: #fbbc04;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* 有修改的标签 */
+.tab.has-changes .tab-name {
+  font-style: italic;
 }
 
 /* 关闭按钮 */

@@ -39,6 +39,8 @@ export class IPCHandler {
     this.handleOpenFile();
     this.handleReadFile();
     this.handleCloseFile();
+    this.handleSaveFile();
+    this.handleSaveFileDialog();
     this.setupFileWatcher();
   }
 
@@ -100,6 +102,44 @@ export class IPCHandler {
       } catch (error: any) {
         console.error('关闭文件监视失败:', error);
         return false;
+      }
+    });
+  }
+
+  /**
+   * 注册 'save-file' 处理器
+   * 保存文件内容
+   */
+  private handleSaveFile(): void {
+    ipcMain.handle('save-file', async (_event, filePath: string, content: string) => {
+      try {
+        const result = await this.fileHandler.saveFile(filePath, content);
+
+        if (!result.success) {
+          this.sendFileError(result.error!, filePath);
+          throw new Error(result.error!.message);
+        }
+
+        return true;
+      } catch (error: any) {
+        console.error('保存文件失败:', error);
+        throw error;
+      }
+    });
+  }
+
+  /**
+   * 注册 'save-file-dialog' 处理器
+   * 显示保存文件对话框
+   */
+  private handleSaveFileDialog(): void {
+    ipcMain.handle('save-file-dialog', async (_event, defaultFileName?: string) => {
+      try {
+        const filePath = await this.fileHandler.saveFileDialog(defaultFileName);
+        return filePath;
+      } catch (error: any) {
+        console.error('保存文件对话框失败:', error);
+        return null;
       }
     });
   }

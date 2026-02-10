@@ -1,20 +1,16 @@
 // Electron 主进程入口文件
 // 使用 WindowManager 管理应用窗口
 
-import { app, BrowserWindow } from 'electron';
+import { app, BrowserWindow, Menu } from 'electron';
 import path from 'path';
 import { WindowManager } from './WindowManager';
 import { IPCHandler } from './IPCHandler';
-import { MenuManager } from './MenuManager';
 
 // 创建窗口管理器实例
 const windowManager = new WindowManager();
 
 // 创建 IPC 处理器实例
 const ipcHandler = new IPCHandler();
-
-// 创建菜单管理器实例
-const menuManager = new MenuManager();
 
 // 存储待打开的文件路径（用于双击文件或拖拽到图标打开）
 let pendingFilePath: string | null = null;
@@ -69,8 +65,8 @@ function sendInitialFile(window: BrowserWindow, filePath: string): void {
  * 应用准备就绪时创建窗口
  */
 app.whenReady().then(() => {
-  // 创建应用菜单
-  menuManager.createMenu();
+  // 隐藏菜单栏
+  Menu.setApplicationMenu(null);
 
   const window = windowManager.createWindow();
 

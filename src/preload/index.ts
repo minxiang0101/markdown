@@ -52,6 +52,21 @@ export interface ElectronAPI {
   closeFile: (filePath: string) => Promise<boolean>;
 
   /**
+   * 保存文件内容
+   * @param filePath 文件路径
+   * @param content 文件内容
+   * @returns 是否成功
+   */
+  saveFile: (filePath: string, content: string) => Promise<boolean>;
+
+  /**
+   * 显示保存文件对话框
+   * @param defaultFileName 默认文件名
+   * @returns 选择的文件路径，如果用户取消则返回 null
+   */
+  saveFileDialog: (defaultFileName?: string) => Promise<string | null>;
+
+  /**
    * 监听文件变化事件
    * 需求 3.2: 自动重新加载文件内容
    * @param callback 文件变化时的回调函数，接收文件路径和内容
@@ -99,6 +114,22 @@ contextBridge.exposeInMainWorld('electronAPI', {
       return Promise.reject(new Error('无效的文件路径'));
     }
     return ipcRenderer.invoke('close-file', filePath);
+  },
+
+  saveFile: (filePath: string, content: string) => {
+    // 验证文件路径参数
+    if (typeof filePath !== 'string' || filePath.trim() === '') {
+      return Promise.reject(new Error('无效的文件路径'));
+    }
+    // 验证内容参数
+    if (typeof content !== 'string') {
+      return Promise.reject(new Error('无效的文件内容'));
+    }
+    return ipcRenderer.invoke('save-file', filePath, content);
+  },
+
+  saveFileDialog: (defaultFileName?: string) => {
+    return ipcRenderer.invoke('save-file-dialog', defaultFileName);
   },
 
   onFileChanged: (callback: (data: FileChangedData) => void) => {
