@@ -3,13 +3,12 @@
 
 .preview-pane {
   flex: 1;
+  min-width: 0; /* 允许 flex 子元素收缩 */
   overflow-y: auto;
   overflow-x: hidden;
   padding: 2rem;
   background-color: #ffffff;
   /* 需求 4.4: 响应式布局 - 自动调整以适应窗口尺寸 */
-  width: 100%;
-  height: 100%;
   box-sizing: border-box;
 }
 

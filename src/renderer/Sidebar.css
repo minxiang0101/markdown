@@ -1,0 +1,220 @@
+/* Sidebar 组件样式 */
+
+.sidebar {
+  display: flex;
+  flex-direction: column;
+  width: 260px;
+  min-width: 260px;
+  flex-shrink: 0;
+  background-color: #f8f9fa;
+  border-right: 1px solid #e0e0e0;
+  transition: width 0.2s ease, min-width 0.2s ease;
+  overflow: hidden;
+}
+
+.sidebar.collapsed {
+  width: 40px;
+  min-width: 40px;
+}
+
+/* 侧边栏头部 */
+.sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px;
+  border-bottom: 1px solid #e0e0e0;
+  background-color: #f0f0f0;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+
+.sidebar.collapsed .sidebar-header {
+  justify-content: center;
+  padding: 12px 8px;
+}
+
+.sidebar-title {
+  font-weight: 600;
+  font-size: 14px;
+  color: #333;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .sidebar-title {
+  display: none;
+}
+
+.sidebar-actions {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.sidebar-action-btn,
+.sidebar-toggle-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  background: transparent;
+  color: #666;
+  cursor: pointer;
+  border-radius: 4px;
+  transition: background-color 0.15s, color 0.15s;
+}
+
+.sidebar-action-btn:hover,
+.sidebar-toggle-btn:hover {
+  background-color: #e0e0e0;
+  color: #333;
+}
+
+/* 侧边栏内容 */
+.sidebar-content {
+  flex: 1;
+  min-height: 0; /* 允许在 flex 容器中正确滚动 */
+  overflow-y: auto;
+  padding: 8px 0;
+}
+
+/* 目录列表 */
+.toc-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.toc-children {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+/* 目录项 */
+.toc-item {
+  margin: 0;
+}
+
+.toc-item-content {
+  display: flex;
+  align-items: center;
+  padding: 6px 12px;
+  cursor: pointer;
+  transition: background-color 0.15s;
+  border-radius: 0;
+}
+
+.toc-item-content:hover {
+  background-color: #e8e8e8;
+}
+
+/* 根据标题级别设置缩进 */
+.toc-item.level-1 .toc-item-content {
+  padding-left: 12px;
+}
+
+.toc-item.level-2 .toc-item-content {
+  padding-left: 28px;
+}
+
+.toc-item.level-3 .toc-item-content {
+  padding-left: 44px;
+}
+
+.toc-item.level-4 .toc-item-content {
+  padding-left: 60px;
+}
+
+.toc-item.level-5 .toc-item-content {
+  padding-left: 76px;
+}
+
+.toc-item.level-6 .toc-item-content {
+  padding-left: 92px;
+}
+
+/* 折叠/展开按钮 */
+.toc-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  color: #666;
+  transition: transform 0.2s;
+  flex-shrink: 0;
+}
+
+.toc-toggle.expanded {
+  transform: rotate(90deg);
+}
+
+.toc-toggle-placeholder {
+  width: 16px;
+  height: 16px;
+  margin-right: 4px;
+  flex-shrink: 0;
+}
+
+/* 目录文本 */
+.toc-text {
+  font-size: 13px;
+  color: #333;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.4;
+}
+
+.toc-item.level-1 .toc-text {
+  font-weight: 600;
+}
+
+.toc-item.level-2 .toc-text {
+  font-weight: 500;
+}
+
+/* 空状态 */
+.toc-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 16px;
+  text-align: center;
+  color: #888;
+}
+
+.toc-empty p {
+  margin: 0;
+  font-size: 14px;
+}
+
+.toc-empty-hint {
+  margin-top: 4px !important;
+  font-size: 12px !important;
+  color: #aaa;
+}
+
+/* 滚动条样式 */
+.sidebar-content::-webkit-scrollbar {
+  width: 6px;
+}
+
+.sidebar-content::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb {
+  background-color: #ccc;
+  border-radius: 3px;
+}
+
+.sidebar-content::-webkit-scrollbar-thumb:hover {
+  background-color: #bbb;
+}

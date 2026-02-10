@@ -12,6 +12,30 @@ export interface RendererOptions {
 }
 
 /**
+ * 生成标题的 id（用于锚点跳转）
+ * 与 Sidebar.tsx 中的逻辑保持一致
+ */
+export function generateHeadingId(text: string, index: number): string {
+  const baseId = text
+    .toLowerCase()
+    .replace(/[^\w\u4e00-\u9fa5]+/g, '-')
+    .replace(/^-|-$/g, '');
+  return `${baseId}-${index}`;
+}
+
+/**
+ * 为 HTML 中的标题添加 id 属性
+ */
+function addHeadingIds(html: string): string {
+  let index = 0;
+  return html.replace(/<h([1-6])>([^<]*)<\/h\1>/g, (_match, level, text) => {
+    const id = generateHeadingId(text, index);
+    index++;
+    return `<h${level} id="${id}">${text}</h${level}>`;
+  });
+}
+
+/**
  * Markdown 渲染器类
  * 负责将 Markdown 内容转换为安全的 HTML
  */
@@ -78,9 +102,12 @@ export class MarkdownRenderer {
       // 将 Markdown 转换为 HTML
       const rawHtml = marked.parse(markdown) as string;
 
+      // 为标题添加 id
+      const htmlWithIds = addHeadingIds(rawHtml);
+
       // 清理 HTML 以防止 XSS 攻击
       // 需求 2.1: 确保 HTML 清理正确实施
-      const cleanHtml = DOMPurify.sanitize(rawHtml, {
+      const cleanHtml = DOMPurify.sanitize(htmlWithIds, {
         ALLOWED_TAGS: [
           'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
           'p', 'br', 'hr',

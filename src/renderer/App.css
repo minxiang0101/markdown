@@ -10,6 +10,14 @@
   position: relative;
 }
 
+/* 主容器 - 左右布局 */
+.main-container {
+  display: flex;
+  flex: 1;
+  min-height: 0; /* 重要：确保 flex 子元素可以正确收缩 */
+  overflow: hidden;
+}
+
 /* 拖拽状态样式 */
 .app.dragging::after {
   content: '拖放 Markdown 文件到此处';

@@ -10,6 +10,7 @@
 import { useState, useEffect, useCallback } from 'react'
 import { Toolbar } from './Toolbar'
 import { TabBar, TabInfo } from './TabBar'
+import { Sidebar } from './Sidebar'
 import { PreviewPane } from './PreviewPane'
 import ErrorToast from './ErrorToast'
 import './App.css'
@@ -43,6 +44,7 @@ function App() {
   const [activeTabId, setActiveTabId] = useState<string | null>(null)
   const [error, setError] = useState<ErrorInfo | null>(null)
   const [isDragging, setIsDragging] = useState<boolean>(false)
+  const [isSidebarCollapsed, setIsSidebarCollapsed] = useState<boolean>(false)
 
   // 获取当前激活标签的内容
   const activeTab = tabs.find(t => t.id === activeTabId)
@@ -185,6 +187,13 @@ function App() {
   }
 
   /**
+   * 切换侧边栏折叠状态
+   */
+  const handleSidebarToggle = () => {
+    setIsSidebarCollapsed(prev => !prev)
+  }
+
+  /**
    * 设置文件变化监听
    * 需求 3.2: 自动重新加载文件内容
    * 需求 3.3: 更新显示而不需要用户手动刷新
@@ -210,34 +219,30 @@ function App() {
 
     // 监听初始文件打开事件（双击文件或拖拽到应用图标打开）
     window.electronAPI.onOpenInitialFile(async (filePath: string) => {
-      // 检查文件是否已打开
-      setTabs(prev => {
-        const existingTab = prev.find(t => t.filePath === filePath)
-        if (existingTab) {
-          setActiveTabId(existingTab.id)
-          return prev
-        }
-        return prev
-      })
-
-      // 如果文件未打开，则打开它
       try {
         const content = await window.electronAPI.readFile(filePath)
-        const newTab: TabInfo = {
-          id: generateTabId(),
-          filePath,
-          fileName: getFileName(filePath),
-          content,
-        }
+        const newTabId = generateTabId()
 
+        // 使用函数式更新确保逻辑正确
         setTabs(prev => {
-          // 再次检查是否已存在（防止竞态条件）
-          if (prev.find(t => t.filePath === filePath)) {
+          // 检查文件是否已打开
+          const existingTab = prev.find(t => t.filePath === filePath)
+          if (existingTab) {
+            // 已存在，设置为活动标签
+            setActiveTabId(existingTab.id)
             return prev
           }
+
+          // 不存在，创建新标签
+          const newTab: TabInfo = {
+            id: newTabId,
+            filePath,
+            fileName: getFileName(filePath),
+            content,
+          }
+          setActiveTabId(newTabId)
           return [...prev, newTab]
         })
-        setActiveTabId(newTab.id)
         setError(null)
       } catch (err) {
         setError({
@@ -264,10 +269,19 @@ function App() {
         onTabClose={handleTabClose}
         onTabReorder={handleTabReorder}
       />
-      <PreviewPane
-        content={activeContent}
-        error={error?.message || null}
-      />
+      <div className="main-container">
+        {activeTab && (
+          <Sidebar
+            content={activeContent}
+            isCollapsed={isSidebarCollapsed}
+            onToggle={handleSidebarToggle}
+          />
+        )}
+        <PreviewPane
+          content={activeContent}
+          error={error?.message || null}
+        />
+      </div>
       <ErrorToast
         error={error}
         onClose={handleCloseError}
